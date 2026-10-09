@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ALERTA CERCA</string>
+    <string name="title_activity_main">ALERTA CERCA</string>
+    <string name="package_name">com.alfonso207.sistemaalertas</string>
+    <string name="custom_url_scheme">com.alfonso207.sistemaalertas</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">Ubicación en segundo plano</string>
+    <string name="capacitor_background_geolocation_notification_icon">mipmap/ic_launcher</string>
+</resources>
