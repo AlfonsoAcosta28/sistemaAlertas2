@@ -81,13 +81,16 @@ Notifications**.
   *Maps SDK for Android* habilitado (y *Maps SDK for iOS* si compilas para iPhone). Si la
   restringiste por app Android, agrega el SHA-1 del keystore con el que compilas (el de debug
   también, para probar).
-- **Navegador (`npm run dev`):** usa *Maps JavaScript API*; habilítala y permite
-  `http://localhost:5173/*` si la clave tiene restricción de referente.
+- **Navegador (`npm run dev`):** una clave restringida a apps Android no funciona en web
+  (`RefererNotAllowedMapError`), y una clave solo admite un tipo de restricción. Si quieres
+  Google Maps también en el navegador, crea una segunda clave con *Maps JavaScript API* y
+  restricción de sitios web `http://localhost:5173/*`, y ponla en
+  `VITE_GOOGLE_MAPS_WEB_API_KEY`. Sin ella, en el navegador se muestra OpenStreetMap.
 - En Android el mapa nativo se dibuja debajo del WebView; por eso la pantalla de mapa vuelve
   transparente el fondo de la página mientras está abierta (clase `con-mapa-nativo` en
   `global.css`). Si ves un hueco en lugar del mapa, revisa que ningún contenedor nuevo tenga
   fondo.
-- Sin `VITE_GOOGLE_MAPS_API_KEY`, la app usa Leaflet + OpenStreetMap automáticamente.
+- Sin clave para la plataforma actual, la app usa Leaflet + OpenStreetMap automáticamente.
 
 ## Notificaciones push (Firebase Cloud Messaging)
 

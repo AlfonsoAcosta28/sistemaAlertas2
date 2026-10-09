@@ -12,10 +12,18 @@ import type { Database } from '@/src/types/database';
 import { Boton, Cargando } from '@/src/ui/controles';
 import { compartirTexto } from '@/src/ui/dialogos';
 import { InsigniaEstado } from '@/src/ui/insignia-estado';
+import { esNativo } from '@/src/utils/entorno';
 
 type ReportePublico = Database['public']['Views']['reportes_publicos']['Row'];
 
-const claveGoogleMaps = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? '';
+// Una clave de Google solo admite un tipo de restricción: la de la app Android
+// (VITE_GOOGLE_MAPS_API_KEY) no sirve en el navegador. En web se usa
+// VITE_GOOGLE_MAPS_WEB_API_KEY si existe; si no, Leaflet + OpenStreetMap.
+const claveGoogleMaps =
+  (esNativo
+    ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    : import.meta.env.VITE_GOOGLE_MAPS_WEB_API_KEY
+  )?.trim() ?? '';
 const usarGoogleMaps = tieneClaveGoogleMapsConfigurada(claveGoogleMaps);
 
 /** Re-centra el mapa cuando cambia la ubicación del usuario. */

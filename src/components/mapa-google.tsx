@@ -20,6 +20,10 @@ type PropsMapaGoogle = {
   onSeleccionar: (id: string) => void;
 };
 
+// Cada instancia usa un id distinto para que un mapa destruido nunca se
+// confunda con el nuevo dentro del plugin.
+let contadorMapas = 0;
+
 function hexARgba(hex: string) {
   const limpio = hex.replace('#', '');
   return {
@@ -58,8 +62,17 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
     let instancia: GoogleMap | null = null;
     document.documentElement.classList.add('con-mapa-nativo');
 
-    GoogleMap.create({
-      id: 'mapa-alertas',
+    // Se difiere la creación un tick: en desarrollo, React StrictMode monta,
+    // desmonta y vuelve a montar el componente al instante. Sin esto se crean dos
+    // mapas sobre el mismo elemento y el `destroy` del primero borra el segundo
+    // ("Cannot read properties of undefined (reading 'map')").
+    const temporizador = window.setTimeout(() => {
+      if (!vigente) return;
+      void crear();
+    }, 0);
+
+    const crear = () => GoogleMap.create({
+      id: `mapa-alertas-${++contadorMapas}`,
       element: elemento,
       apiKey,
       forceCreate: true,
@@ -90,6 +103,7 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
 
     return () => {
       vigente = false;
+      window.clearTimeout(temporizador);
       document.documentElement.classList.remove('con-mapa-nativo');
       setMapa(null);
       void instancia?.destroy();
@@ -101,7 +115,9 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
   // Recentrar cuando cambia la ubicación.
   useEffect(() => {
     if (!mapa) return;
-    void mapa.setCamera({ coordinate: { lat: centro.latitud, lng: centro.longitud }, animate: true });
+    void mapa
+      .setCamera({ coordinate: { lat: centro.latitud, lng: centro.longitud }, animate: true })
+      .catch(() => undefined);
   }, [mapa, centro.latitud, centro.longitud]);
 
   // Círculo del radio personal (+ punto propio en web, donde no hay "mi ubicación").
@@ -137,7 +153,10 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
       ]);
       if (vigente) idsCirculos.current = ids;
       else await mapa.removeCircles(ids).catch(() => undefined);
-    })();
+    })().catch((e: unknown) => {
+      // Si el mapa se destruyó mientras tanto (cambio de pestaña), se ignora.
+      if (vigente) console.error('Error actualizando el mapa', e);
+    });
     return () => {
       vigente = false;
     };
@@ -171,7 +190,10 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
         const punto = puntos[i];
         if (punto) idPorMarcador.current.set(idMarcador, punto.id);
       });
-    })();
+    })().catch((e: unknown) => {
+      // Si el mapa se destruyó mientras tanto (cambio de pestaña), se ignora.
+      if (vigente) console.error('Error actualizando el mapa', e);
+    });
     return () => {
       vigente = false;
     };
