@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router';
 
+import { useAvisosCercanos } from '@/src/hooks/use-avisos-cercanos';
 import { usePerfil } from '@/src/hooks/use-perfil';
 import { useSesion } from '@/src/hooks/use-sesion';
 import {
@@ -18,6 +19,12 @@ const PESTANAS = [
   { ruta: '/ajustes', titulo: 'Ajustes', Icono: IconoAjustes },
 ] as const;
 
+/** Avisos de incidentes cercanos (notificación local); solo con sesión iniciada. */
+function AvisosCercanos() {
+  useAvisosCercanos();
+  return null;
+}
+
 export function TabsLayout() {
   const { sesion } = useSesion();
   const perfilQuery = usePerfil();
@@ -35,6 +42,7 @@ export function TabsLayout() {
 
   return (
     <div className="marco-tabs">
+      <AvisosCercanos />
       <header className="encabezado">
         <h1 className="encabezado__titulo">{titulo}</h1>
       </header>

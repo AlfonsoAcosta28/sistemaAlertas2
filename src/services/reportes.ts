@@ -1,5 +1,5 @@
 import { mensajeConfiguracionSupabase, obtenerClienteSupabase } from '@/src/lib/supabase';
-import type { Database, TipoReaccion } from '@/src/types/database';
+import type { AnalisisFoto, Database, Json, TipoReaccion } from '@/src/types/database';
 
 import { ErrorConfiguracionSupabase } from './errores';
 
@@ -13,7 +13,11 @@ export type CrearReporteInput = {
   celdaH3: string;
   descripcion: string | null;
   fotoUrl?: string | null;
+  /** Campos extra de la categoría (placas, nombre de la persona, etc.). */
+  datos?: Record<string, string>;
+  analisisFoto?: AnalisisFoto | null;
 };
+
 
 export async function listarReportesPublicos(): Promise<ReportePublico[]> {
   const supabase = obtenerClienteSupabase();
@@ -69,6 +73,8 @@ export async function crearReporte(input: CrearReporteInput): Promise<string> {
     p_celda_h3: input.celdaH3,
     p_descripcion: input.descripcion,
     p_foto_url: input.fotoUrl ?? null,
+    p_datos: (input.datos ?? {}) as Json,
+    p_analisis_foto: (input.analisisFoto ?? null) as Json | null,
   });
 
   if (error) {
@@ -103,4 +109,31 @@ export async function reaccionarReporte(reporteId: string, tipo: TipoReaccion): 
   }
 
   return data;
+}
+
+/** Instituciones a las que se mandó cada uno de mis reportes (reporte_id → nombres). */
+export async function listarEnviosDeMisReportes(): Promise<Map<string, string[]>> {
+  const supabase = obtenerClienteSupabase();
+
+  if (!supabase) {
+    throw new ErrorConfiguracionSupabase(mensajeConfiguracionSupabase());
+  }
+
+  const [{ data: envios, error }, { data: instituciones, error: errorInstituciones }] = await Promise.all([
+    supabase.from('reporte_envios').select('reporte_id, institucion_id, estado'),
+    supabase.from('instituciones').select('id, nombre'),
+  ]);
+
+  if (error || errorInstituciones) {
+    throw new Error((error ?? errorInstituciones)?.message);
+  }
+
+  const nombrePorInstitucion = new Map((instituciones ?? []).map((i) => [i.id, i.nombre]));
+  const resultado = new Map<string, string[]>();
+  for (const envio of envios ?? []) {
+    const lista = resultado.get(envio.reporte_id) ?? [];
+    lista.push(nombrePorInstitucion.get(envio.institucion_id) ?? 'Institución');
+    resultado.set(envio.reporte_id, lista);
+  }
+  return resultado;
 }

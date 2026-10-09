@@ -26,6 +26,8 @@ type ReporteActivo = {
   radio_actual_metros: number;
   vigencia_minutos: number;
   created_at: string;
+  veracidad: number;
+  creador_id: string | null;
 };
 
 type Candidato = {
@@ -52,6 +54,31 @@ function dentroDeHorarioSilencio(inicio: string | null, fin: string | null): boo
 
 function esAlertaCriticaVerificada(reporte: ReporteActivo): boolean {
   return reporte.severidad === "alta" && reporte.estado === "verificada";
+}
+
+/**
+ * Texto llamativo según el estado:
+ *  - Reportada: se pide a los vecinos más cercanos (mitad del radio) que confirmen.
+ *  - Pre-validada: lleva el porcentaje de veracidad.
+ *  - Validada: confirmada por una institución.
+ */
+function textoNotificacion(reporte: ReporteActivo, nombreCategoria: string): { title: string; body: string } {
+  if (reporte.estado === "no_confirmada") {
+    return {
+      title: `¿Tú también lo ves? ${nombreCategoria} cerca de ti`,
+      body: "Un vecino acaba de reportarlo. Abre la app para confirmarlo o desmentirlo.",
+    };
+  }
+  if (reporte.estado === "corroborada") {
+    return {
+      title: `¡${nombreCategoria} cerca de ti!`,
+      body: `Pre-validado por vecinos (${reporte.veracidad}% de veracidad). Ya se avisó a las autoridades.`,
+    };
+  }
+  return {
+    title: `¡${nombreCategoria} cerca de ti! (validado)`,
+    body: "Confirmado por una institución. Toma precauciones y abre la app para ver detalles.",
+  };
 }
 
 Deno.serve(async (req) => {
@@ -97,6 +124,11 @@ Deno.serve(async (req) => {
       const candidatos = (candidatosData ?? []) as Candidato[];
 
       const elegibles = candidatos.filter((candidato) => {
+        // Nunca se le avisa al autor de su propio reporte.
+        if (reporte.creador_id && candidato.usuario_id === reporte.creador_id) {
+          return false;
+        }
+
         if (reporte.estado === "no_confirmada" && !candidato.ver_no_confirmados) {
           return false;
         }
@@ -144,13 +176,7 @@ Deno.serve(async (req) => {
 
       const mensajes: MensajePush[] = porEnviar.map((candidato) => ({
         to: candidato.push_token,
-        title: esCritica ? `Alerta verificada: ${nombreCategoria}` : `Reporte cercano: ${nombreCategoria}`,
-        body:
-          reporte.estado === "no_confirmada"
-            ? "Reporte ciudadano sin confirmar cerca de ti."
-            : reporte.estado === "corroborada"
-              ? "Varios reportes coinciden: posible incidente cerca de ti."
-              : "Alerta verificada por un moderador cerca de ti.",
+        ...textoNotificacion(reporte, nombreCategoria),
         sound: esCritica ? "default" : reporte.estado === "no_confirmada" ? null : "default",
         priority: "high",
         channelId: esCritica ? "alertas-criticas" : "alertas",
@@ -159,6 +185,7 @@ Deno.serve(async (req) => {
           categoriaId: reporte.categoria_id,
           estado: reporte.estado,
           severidad: reporte.severidad,
+          veracidad: reporte.veracidad,
           latitudAproximada: reporte.latitud,
           longitudAproximada: reporte.longitud,
           radioAlertaActualMetros: reporte.radio_actual_metros,

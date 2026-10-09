@@ -2,7 +2,33 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
 
 export type EstadoReporte = 'no_confirmada' | 'corroborada' | 'verificada' | 'descartada' | 'cerrada';
 export type Severidad = 'baja' | 'media' | 'alta';
-export type RolUsuario = 'ciudadano' | 'moderador' | 'autoridad';
+// 'moderador' solo existe por compatibilidad (las filas se migraron a 'gubernamental').
+export type RolUsuario = 'ciudadano' | 'moderador' | 'gubernamental' | 'administrador';
+export type EstadoEnvio = 'enviado' | 'validado_verdad' | 'validado_mentira' | 'cerrado';
+export type TipoCampo = 'texto' | 'texto_largo' | 'numero' | 'opciones';
+
+/** Campo extra del formulario de reporte, definido por categoría (`categorias.campos_formulario`). */
+export type CampoFormulario = {
+  clave: string;
+  etiqueta: string;
+  tipo: TipoCampo;
+  requerido?: boolean;
+  /** Obligatorio solo cuando el campo con esta clave está vacío (ej. descripción si no hay placas). */
+  requerido_si_vacio?: string;
+  opciones?: string[];
+  ayuda?: string;
+  mayusculas?: boolean;
+};
+
+/** Resultado del análisis de la foto hecho en el teléfono. */
+export type AnalisisFoto = {
+  disponible: boolean;
+  nsfw: boolean;
+  probabilidadNsfw: number;
+  rostros: number;
+  calidad: { ancho: number; alto: number; nitidez: number; brillo: number; aceptable: boolean };
+  rostrosCubiertos: number;
+};
 export type TipoReaccion = 'confirma' | 'desmiente';
 
 // Tipos "Row" nombrados de forma independiente (no indexados dentro del tipo
@@ -21,8 +47,55 @@ type CategoriaRow = {
   radio_maximo_metros: number;
   vigencia_default_minutos: number;
   requiere_moderacion_obligatoria: boolean;
+  requiere_foto: boolean;
+  foto_requiere_rostro: boolean;
+  campos_formulario: Json;
   created_at: string;
   updated_at: string;
+};
+
+type CategoriaReglaRow = {
+  categoria_id: string;
+  umbral_confirmaciones: number;
+  ventana_minutos: number;
+  expiracion_minutos: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type InstitucionRow = {
+  id: string;
+  nombre: string;
+  tipo: string;
+  telefono: string | null;
+  correo: string | null;
+  webhook_url: string | null;
+  activa: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type CategoriaInstitucionRow = {
+  categoria_id: string;
+  institucion_id: string;
+};
+
+type ReporteEnvioRow = {
+  id: string;
+  reporte_id: string;
+  institucion_id: string;
+  estado: EstadoEnvio;
+  enviado_en: string;
+  actualizado_en: string;
+};
+
+type ReputacionMovimientoRow = {
+  id: string;
+  usuario_id: string;
+  reporte_id: string | null;
+  puntos: number;
+  motivo: string;
+  created_at: string;
 };
 
 type PerfilRow = {
@@ -36,6 +109,8 @@ type PerfilRow = {
   reportes_confirmados_contador: number;
   reportes_descartados_contador: number;
   onboarding_completado: boolean;
+  reputacion: number;
+  institucion_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -60,6 +135,12 @@ type ReporteRow = {
   cerrado_en: string | null;
   descartado_motivo: string | null;
   foto_url: string | null;
+  datos: Json;
+  analisis_foto: Json | null;
+  puntaje_apoyo: number;
+  puntaje_contra: number;
+  veracidad: number;
+  prevalidado_en: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -123,6 +204,24 @@ type ReportePublicoRow = {
   created_at: string;
   updated_at: string;
   expira_en: string;
+  veracidad: number;
+  datos: Json;
+  foto_url: string | null;
+  enviado_a: string[];
+  categoria_icono: string | null;
+};
+
+export type UsuarioAdmin = {
+  id: string;
+  email: string | null;
+  telefono: string | null;
+  rol: RolUsuario;
+  institucion_id: string | null;
+  reputacion: number;
+  suspendido_hasta: string | null;
+  reportes_confirmados_contador: number;
+  reportes_descartados_contador: number;
+  created_at: string;
 };
 
 export type Database = {
@@ -132,6 +231,36 @@ export type Database = {
         Row: CategoriaRow;
         Insert: Partial<CategoriaRow>;
         Update: Partial<CategoriaRow>;
+        Relationships: never[];
+      };
+      categoria_reglas: {
+        Row: CategoriaReglaRow;
+        Insert: Partial<CategoriaReglaRow>;
+        Update: Partial<CategoriaReglaRow>;
+        Relationships: never[];
+      };
+      instituciones: {
+        Row: InstitucionRow;
+        Insert: Partial<InstitucionRow> & { nombre: string };
+        Update: Partial<InstitucionRow>;
+        Relationships: never[];
+      };
+      categoria_instituciones: {
+        Row: CategoriaInstitucionRow;
+        Insert: CategoriaInstitucionRow;
+        Update: Partial<CategoriaInstitucionRow>;
+        Relationships: never[];
+      };
+      reporte_envios: {
+        Row: ReporteEnvioRow;
+        Insert: Partial<ReporteEnvioRow>;
+        Update: Partial<ReporteEnvioRow>;
+        Relationships: never[];
+      };
+      reputacion_movimientos: {
+        Row: ReputacionMovimientoRow;
+        Insert: Partial<ReputacionMovimientoRow>;
+        Update: Partial<ReputacionMovimientoRow>;
         Relationships: never[];
       };
       perfiles: {
@@ -197,8 +326,26 @@ export type Database = {
           p_celda_h3: string;
           p_descripcion?: string | null;
           p_foto_url?: string | null;
+          p_datos?: Json;
+          p_analisis_foto?: Json | null;
         };
         Returns: string;
+      };
+      admin_guardar_categoria: {
+        Args: { p_id: string | null; p_datos: Json };
+        Returns: string;
+      };
+      admin_listar_usuarios: {
+        Args: { p_busqueda?: string | null };
+        Returns: UsuarioAdmin[];
+      };
+      admin_cambiar_rol: {
+        Args: { p_usuario_id: string; p_rol: RolUsuario; p_institucion_id?: string | null };
+        Returns: undefined;
+      };
+      admin_suspender_usuario: {
+        Args: { p_usuario_id: string; p_dias: number };
+        Returns: undefined;
       };
       reaccionar_reporte: {
         Args: {

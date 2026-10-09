@@ -5,12 +5,16 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 
 import { useRegistroPush } from '@/src/hooks/use-registro-push';
 import { useSesion } from '@/src/hooks/use-sesion';
-import { AdminLayout } from '@/src/navegacion/admin-layout';
+import { AdminLayout, SoloAdministrador } from '@/src/navegacion/admin-layout';
 import { AuthLayout } from '@/src/navegacion/auth-layout';
 import { OnboardingLayout } from '@/src/navegacion/onboarding-layout';
 import { TabsLayout } from '@/src/navegacion/tabs-layout';
+import { CategoriasAdminScreen } from '@/src/pantallas/admin/categorias';
+import { DetalleReporteScreen } from '@/src/pantallas/admin/detalle-reporte';
 import { HistorialModeracionScreen } from '@/src/pantallas/admin/historial';
+import { InstitucionesAdminScreen } from '@/src/pantallas/admin/instituciones';
 import { ModeracionScreen } from '@/src/pantallas/admin/moderacion';
+import { UsuariosAdminScreen } from '@/src/pantallas/admin/usuarios';
 import { LoginScreen } from '@/src/pantallas/auth/login';
 import { RegistroScreen } from '@/src/pantallas/auth/registro';
 import { PreferenciasInicialesScreen } from '@/src/pantallas/onboarding/preferencias-iniciales';
@@ -91,6 +95,31 @@ export function NavegacionRaiz() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<ModeracionScreen />} />
         <Route path="historial" element={<HistorialModeracionScreen />} />
+        <Route path="reporte/:reporteId" element={<DetalleReporteScreen />} />
+        <Route
+          path="categorias"
+          element={
+            <SoloAdministrador>
+              <CategoriasAdminScreen />
+            </SoloAdministrador>
+          }
+        />
+        <Route
+          path="instituciones"
+          element={
+            <SoloAdministrador>
+              <InstitucionesAdminScreen />
+            </SoloAdministrador>
+          }
+        />
+        <Route
+          path="usuarios"
+          element={
+            <SoloAdministrador>
+              <UsuariosAdminScreen />
+            </SoloAdministrador>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

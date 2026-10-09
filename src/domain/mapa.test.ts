@@ -16,10 +16,10 @@ describe('tieneClaveGoogleMapsConfigurada', () => {
 
 describe('obtenerEtiquetaEstadoReporte', () => {
   it('mapea los cinco estados del documento a etiquetas en español', () => {
-    expect(obtenerEtiquetaEstadoReporte('no_confirmada')).toBe('Reporte ciudadano sin confirmar');
-    expect(obtenerEtiquetaEstadoReporte('corroborada')).toBe('Varios reportes');
-    expect(obtenerEtiquetaEstadoReporte('verificada')).toBe('Verificada');
-    expect(obtenerEtiquetaEstadoReporte('descartada')).toBe('Descartada');
+    expect(obtenerEtiquetaEstadoReporte('no_confirmada')).toBe('Reportada');
+    expect(obtenerEtiquetaEstadoReporte('corroborada')).toBe('Pre-validada');
+    expect(obtenerEtiquetaEstadoReporte('verificada')).toBe('Validada');
+    expect(obtenerEtiquetaEstadoReporte('descartada')).toBe('Falsa');
     expect(obtenerEtiquetaEstadoReporte('cerrada')).toBe('Resuelta');
   });
 });

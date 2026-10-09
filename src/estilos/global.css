@@ -484,10 +484,12 @@ button:disabled {
 .titulo-detalle { font-size: 18px; font-weight: 700; color: var(--tinta); }
 
 .fila-reporte {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  justify-items: start;
+  column-gap: 10px;
+  row-gap: 4px;
   padding: 8px;
   border: 1px solid var(--borde);
   border-radius: 8px;
@@ -533,3 +535,101 @@ html.con-mapa-nativo .pantalla-mapa,
 html.con-mapa-nativo .mapa-google {
   background: transparent !important;
 }
+
+/* ---------- Requisitos: íconos, formulario dinámico, veracidad, panel admin ---------- */
+.alinear-centro { align-items: center; }
+.texto-verde { color: var(--verde); }
+
+.icono-categoria { width: 24px; height: 24px; flex: none; }
+.icono-detalle { width: 40px; height: 40px; flex: none; }
+.fila-reporte > .icono-categoria { grid-row: span 3; align-self: start; width: 28px; height: 28px; }
+
+.chip--icono { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 8px; }
+.chip--chico { padding: 7px 10px; font-size: 14px; }
+
+.etiqueta-campo { font-weight: 600; color: var(--tinta); font-size: 14px; }
+
+.declaracion {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #7f1d1d;
+  font-size: 14px;
+}
+.declaracion input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--rojo); }
+
+.analisis-foto { font-size: 13px; align-items: center; }
+.analisis-foto--ok { color: var(--verde); font-weight: 600; }
+.analisis-foto--aviso { color: #92400e; background: #fffbeb; border-radius: 8px; padding: 8px 10px; }
+
+.veracidad { display: flex; flex-direction: column; gap: 4px; }
+.veracidad__pista { height: 6px; border-radius: 999px; background: var(--borde); overflow: hidden; }
+.veracidad__barra { height: 100%; border-radius: 999px; transition: width 0.3s; }
+
+.lista-datos { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.lista-datos > div { display: flex; gap: 6px; font-size: 14px; }
+.lista-datos dt { font-weight: 600; color: var(--tinta); }
+.lista-datos dt::after { content: ':'; }
+.lista-datos dd { margin: 0; color: var(--texto-2); }
+
+.pestanas-admin {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  background: var(--blanco);
+  border-bottom: 1px solid var(--borde);
+  scrollbar-width: none;
+}
+.pestanas-admin__item {
+  flex: none;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: var(--texto-3);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  background: var(--fondo);
+}
+.pestanas-admin__item--activo { background: var(--azul); color: var(--blanco); }
+
+.fila-admin {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.boton--auto,
+.fila > .boton.boton--auto { flex: none; min-height: 38px; padding: 6px 14px; }
+
+.rejilla-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.editor-campo { background: var(--fondo); }
+.editor-campo .fila > .campo { flex: 1; min-width: 0; }
+
+.selector-icono {
+  width: 48px;
+  height: 48px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--fondo);
+}
+.selector-icono img { width: 100%; height: 100%; }
+.selector-icono--activo { border-color: var(--azul); background: var(--azul-claro); }
+
+.aviso-autor { background: var(--azul-claro); border-radius: 8px; padding: 8px 10px; color: var(--texto-2); }
+
+.texto-azul { color: var(--azul); font-weight: 600; font-size: 14px; }
+.fila-historial { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.fila-historial:active { background: var(--azul-claro); }
+.linea-tiempo { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--borde); display: flex; flex-direction: column; gap: 12px; }
+.linea-tiempo li { position: relative; display: flex; flex-direction: column; gap: 2px; }
+.linea-tiempo li::before { content: ''; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--azul); }

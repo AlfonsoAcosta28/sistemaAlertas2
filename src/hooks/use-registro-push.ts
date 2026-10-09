@@ -96,16 +96,15 @@ export function useRegistroPush() {
                 title: notificacion.title ?? 'ALERTA CERCA',
                 body: notificacion.body ?? '',
                 channelId: esCritica ? CANAL_CRITICAS : CANAL_GENERAL,
-                extra: datos,
+                extra: { ...datos, reporteId: (datos as { reporteId?: string }).reporteId },
               },
             ],
           });
         }),
-        await PushNotifications.addListener('pushNotificationActionPerformed', () => {
-          navigate('/mapa');
-        }),
-        await LocalNotifications.addListener('localNotificationActionPerformed', () => {
-          navigate('/mapa');
+        // (Tocar una notificación LOCAL lo maneja `useAvisosCercanos`.)
+        await PushNotifications.addListener('pushNotificationActionPerformed', (accion) => {
+          const datos = (accion.notification.data ?? {}) as { reporteId?: string };
+          navigate(datos.reporteId ? `/mapa?reporte=${encodeURIComponent(datos.reporteId)}` : '/mapa');
         }),
       );
 

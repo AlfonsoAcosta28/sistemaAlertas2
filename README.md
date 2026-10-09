@@ -136,11 +136,56 @@ npx supabase link --project-ref <tu-project-ref>
 npx supabase db push
 npx supabase functions deploy motor-distribucion
 npx supabase functions deploy eliminar-cuenta
+npx supabase functions deploy admin-eliminar-usuario
 ```
 
-Para dar de alta a un moderador y conectar `pg_cron` con el motor, siguen aplicando las
-instrucciones del README de la versión Expo (`private.configuracion` y
-`update public.perfiles set rol = 'moderador' ...`).
+Para conectar `pg_cron` con el motor siguen aplicando las instrucciones del README de la
+versión Expo (`private.configuracion`).
+
+### Roles: dar de alta al primer administrador
+
+Los roles son **Usuario normal** (`ciudadano`), **Gubernamental** y **Administrador**. El
+primer administrador se asigna desde el SQL Editor de Supabase; después, él cambia los roles
+de los demás desde la app (**Ajustes → Abrir panel de administración → Usuarios**):
+
+```sql
+select set_config('alerta_cerca.permitir_campos_protegidos', 'true', false);
+update public.perfiles set rol = 'administrador'
+where id = (select id from auth.users where email = 'tu-correo@ejemplo.com');
+```
+
+Un usuario **Gubernamental** con institución asignada (ej. Bomberos) solo ve y valida los
+reportes que se enviaron a su institución; sin institución, ve todos.
+
+## Requisitos del documento (categorías, validación y reputación)
+
+Migraciones `20261009020000_alerta_cerca_roles.sql` y `20261009021000_alerta_cerca_requisitos.sql`:
+
+| Categoría | Radio | Credibilidad (personas) | Se envía a |
+| --- | --- | --- | --- |
+| Persona desaparecida | 2 km | 1 (foto con rostro obligatoria + declaración) | Comisión de Búsqueda, Fiscalía |
+| Robo de vehículo | 3 km | 5 (placas, o tipo/marca/color si no hay placas) | Policía, Fiscalía |
+| Incendio | 700 m | 5 | Bomberos, Protección Civil |
+| Inundación | 500 m – 1 km | 3 | Protección Civil, Bomberos |
+| Asalto | 500 m | 2 | Policía |
+| Choque | 500 m | 2 | Tránsito, Servicios médicos |
+| Zona obstruida | 500 m | 5 | Tránsito |
+
+- **Reportada → Pre-validada → Validada.** Mientras está *Reportada*, la pregunta «¿Tú también
+  lo ves?» llega a la mitad del radio. Cada voto pesa según la reputación (0 pts = 1 voto,
+  máx. 2, mín. 0.25). Al superar el umbral se pre-valida, se calcula el **% de veracidad** y
+  se envía a las instituciones de la categoría (`reporte_envios`; si la institución tiene
+  `webhook_url`, también se le hace un POST con el reporte).
+- **Validación VERDAD / MENTIRA** (Gubernamental o Administrador): autor +10 / −15; quienes
+  dijeron «lo veo» +5 / −5; quienes dijeron «no es cierto» −5 / +5.
+- **Formulario por categoría:** `categorias.campos_formulario` (lo edita el administrador en
+  **Administración → Categorías**, junto con radio, credibilidad, ícono, instituciones, etc.).
+- **Íconos del mapa:** `public/iconos-alerta/*.png` (generados de los `.svg` del mismo folder).
+- **Fotos:** antes de subirla, el teléfono revisa contenido inapropiado (NSFWJS), detecta rostros
+  (face-api, modelo en `public/modelos/rostros/`) y mide la calidad. En reportes normales los
+  rostros se tapan solos; en persona desaparecida se exige un rostro nítido. El servidor
+  rechaza fotos marcadas como inapropiadas, pero el análisis corre en el teléfono, así que una
+  app modificada podría saltárselo: la institución sigue revisando la foto.
 
 ## Íconos y splash
 
@@ -162,7 +207,10 @@ npm run build
 ## Limitaciones conocidas
 
 Las mismas del prototipo Expo (anillos por `pg_cron` cada minuto, sin detección automática de
-rostros/placas, sin OTP por SMS, horario de silencio en UTC, sin *critical alerts* de Apple), más:
+placas, sin OTP por SMS, horario de silencio en UTC, sin *critical alerts* de Apple), más:
+
+- Un usuario que ya recibió la notificación de un reporte no recibe otra cuando ese reporte
+  cambia de estado (el motor no repite avisos por reporte).
 
 - El observador de ubicación en segundo plano se detiene si el sistema cierra la app; se
   reanuda al volver a abrirla.

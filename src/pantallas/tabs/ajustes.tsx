@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router';
 import { MensajeConfiguracion } from '@/src/components/mensaje-configuracion';
 import { useCategorias } from '@/src/hooks/use-categorias';
 import { usePermisosDispositivo } from '@/src/hooks/use-permisos-dispositivo';
-import { useEsModerador } from '@/src/hooks/use-perfil';
+import { nivelReputacion, pesoReputacion, PUNTOS } from '@/src/domain/reputacion';
+import { useMisMovimientosReputacion } from '@/src/hooks/use-admin';
+import { usePerfil, useRol } from '@/src/hooks/use-perfil';
 import {
   useActualizarCategoriaPreferencia,
   useActualizarPreferencias,
@@ -30,7 +32,10 @@ export function AjustesScreen() {
   const navigate = useNavigate();
   const permisos = usePermisosDispositivo();
   const ubicacion = useUbicacion();
-  const { esModerador } = useEsModerador();
+  const { puedeValidar, esAdministrador } = useRol();
+  const perfilQuery = usePerfil();
+  const movimientosQuery = useMisMovimientosReputacion();
+  const reputacion = perfilQuery.data?.reputacion ?? 0;
 
   const preferenciasQuery = usePreferencias();
   const actualizarPreferencias = useActualizarPreferencias();
@@ -122,6 +127,28 @@ export function AjustesScreen() {
       {preferenciasQuery.error ? <MensajeConfiguracion error={preferenciasQuery.error} /> : null}
 
       <section className="tarjeta">
+        <p className="etiqueta">Tu reputación</p>
+        <p className="valor">
+          {reputacion} puntos · {nivelReputacion(reputacion)}
+        </p>
+        <p className="texto-secundario texto-13">
+          Tu voto vale {pesoReputacion(reputacion).toFixed(2)} al validar reportes. Ganas {PUNTOS.reporteVerdadero}{' '}
+          puntos si una institución confirma tu reporte y {PUNTOS.validacionAcertada} si aciertas al decir «lo
+          veo» o «no es cierto»; pierdes {Math.abs(PUNTOS.reporteFalso)} por un reporte falso y{' '}
+          {Math.abs(PUNTOS.validacionFallida)} si fallas.
+        </p>
+        {movimientosQuery.data?.slice(0, 5).map((m) => (
+          <p key={m.id} className="texto-pequeno texto-secundario">
+            <span className={m.puntos >= 0 ? 'texto-verde' : 'texto-error'}>
+              {m.puntos > 0 ? '+' : ''}
+              {m.puntos}
+            </span>{' '}
+            {m.motivo} · {new Date(m.created_at).toLocaleDateString('es-MX')}
+          </p>
+        ))}
+      </section>
+
+      <section className="tarjeta">
         <p className="etiqueta">Radio personal</p>
         <p className="valor">{(radioMetros / 1000).toFixed(0)} km</p>
         <div className="fila fila--10">
@@ -202,9 +229,9 @@ export function AjustesScreen() {
         </Boton>
       </section>
 
-      {esModerador ? (
+      {puedeValidar ? (
         <Boton variante="secundario" onClick={() => navigate('/admin')}>
-          Abrir panel de moderación
+          {esAdministrador ? 'Abrir panel de administración' : 'Abrir panel de validación'}
         </Boton>
       ) : null}
 

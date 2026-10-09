@@ -4,16 +4,17 @@ export function tieneClaveGoogleMapsConfigurada(claveGoogleMaps: string | undefi
   return Boolean(claveGoogleMaps?.trim());
 }
 
+/** Estados del documento: Reportada → Pre-validada → Validada (o Falsa). */
 export function obtenerEtiquetaEstadoReporte(estado: EstadoReporte): string {
   switch (estado) {
     case 'no_confirmada':
-      return 'Reporte ciudadano sin confirmar';
+      return 'Reportada';
     case 'corroborada':
-      return 'Varios reportes';
+      return 'Pre-validada';
     case 'verificada':
-      return 'Verificada';
+      return 'Validada';
     case 'descartada':
-      return 'Descartada';
+      return 'Falsa';
     case 'cerrada':
       return 'Resuelta';
   }

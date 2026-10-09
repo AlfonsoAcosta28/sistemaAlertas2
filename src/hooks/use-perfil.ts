@@ -13,12 +13,30 @@ export function usePerfil() {
   });
 }
 
-export function useEsModerador() {
+/**
+ * Roles del documento:
+ *  - ciudadano (usuario normal): reporta, tiene reputación y recibe alertas.
+ *  - gubernamental: valida reportes como VERDAD / MENTIRA (los de su institución).
+ *  - administrador: además gestiona categorías, instituciones y usuarios.
+ */
+export function useRol() {
   const perfilQuery = usePerfil();
   const rol = perfilQuery.data?.rol;
+  const esAdministrador = rol === 'administrador';
+  const esGubernamental = rol === 'gubernamental' || rol === 'moderador';
 
   return {
-    esModerador: rol === 'moderador' || rol === 'autoridad',
+    rol,
+    esAdministrador,
+    esGubernamental,
+    puedeValidar: esAdministrador || esGubernamental,
+    institucionId: perfilQuery.data?.institucion_id ?? null,
     cargando: perfilQuery.isLoading,
   };
+}
+
+/** Compatibilidad con pantallas existentes. */
+export function useEsModerador() {
+  const { puedeValidar, cargando } = useRol();
+  return { esModerador: puedeValidar, cargando };
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   crearReporte,
+  listarEnviosDeMisReportes,
   listarMisReportes,
   listarReportesPublicos,
   reaccionarReporte,
@@ -21,6 +22,13 @@ export function useMisReportes() {
   return useQuery({
     queryKey: ['reportes', 'mios'],
     queryFn: listarMisReportes,
+  });
+}
+
+export function useEnviosDeMisReportes() {
+  return useQuery({
+    queryKey: ['reportes', 'mios', 'envios'],
+    queryFn: listarEnviosDeMisReportes,
   });
 }
 

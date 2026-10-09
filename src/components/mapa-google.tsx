@@ -1,6 +1,7 @@
 import { GoogleMap } from '@capacitor/google-maps';
 import { useEffect, useRef, useState } from 'react';
 
+import { rutaIconoAlerta } from '@/src/domain/iconos-alerta';
 import { esNativo } from '@/src/utils/entorno';
 
 export type PuntoMapa = {
@@ -8,6 +9,8 @@ export type PuntoMapa = {
   latitud: number;
   longitud: number;
   color: string;
+  /** Clave del ícono de la categoría (ver `src/domain/iconos-alerta.ts`). */
+  icono: string | null;
   titulo: string;
   detalle: string;
 };
@@ -178,6 +181,12 @@ export function MapaGoogle({ apiKey, centro, radioMetros, puntos, onSeleccionar 
           coordinate: { lat: p.latitud, lng: p.longitud },
           title: p.titulo,
           snippet: p.detalle,
+          // Ícono por tipo de alerta (llamita, gota, auto...). En Android el
+          // plugin lo lee de los assets (`public/iconos-alerta/*.png`).
+          iconUrl: rutaIconoAlerta(p.icono, { relativa: esNativo }),
+          iconSize: { width: 40, height: 40 },
+          iconAnchor: { x: 20, y: 20 },
+          // Respaldo si el ícono no se pudiera cargar.
           tintColor: hexARgba(p.color),
         })),
       );
