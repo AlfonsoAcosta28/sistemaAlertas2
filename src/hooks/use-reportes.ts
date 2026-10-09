@@ -8,6 +8,7 @@ import {
   reaccionarReporte,
   type CrearReporteInput,
 } from '@/src/services/reportes';
+import { useSesion } from '@/src/hooks/use-sesion';
 import type { TipoReaccion } from '@/src/types/database';
 
 export function useReportesPublicos() {
@@ -19,15 +20,20 @@ export function useReportesPublicos() {
 }
 
 export function useMisReportes() {
+  // El id del usuario va en la llave para no mezclar datos al cambiar de cuenta.
+  const { usuario } = useSesion();
   return useQuery({
-    queryKey: ['reportes', 'mios'],
+    queryKey: ['reportes', 'mios', usuario?.id],
+    enabled: Boolean(usuario),
     queryFn: listarMisReportes,
   });
 }
 
 export function useEnviosDeMisReportes() {
+  const { usuario } = useSesion();
   return useQuery({
-    queryKey: ['reportes', 'mios', 'envios'],
+    queryKey: ['reportes', 'mios', usuario?.id, 'envios'],
+    enabled: Boolean(usuario),
     queryFn: listarEnviosDeMisReportes,
   });
 }

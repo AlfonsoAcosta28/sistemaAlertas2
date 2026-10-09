@@ -46,9 +46,19 @@ export async function listarMisReportes(): Promise<ReportePropio[]> {
     throw new ErrorConfiguracionSupabase(mensajeConfiguracionSupabase());
   }
 
+  // Filtrar por autor es obligatorio: a los roles Gubernamental y Administrador
+  // las reglas de la base también les devuelven reportes de otros usuarios
+  // (los que pueden validar), y sin este filtro aparecerían como "propios".
+  const { data: sesion } = await supabase.auth.getSession();
+  const usuarioId = sesion.session?.user.id;
+  if (!usuarioId) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('reportes')
     .select('*')
+    .eq('creador_id', usuarioId)
     .order('created_at', { ascending: false })
     .limit(100);
 
