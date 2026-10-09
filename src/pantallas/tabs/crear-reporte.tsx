@@ -10,10 +10,11 @@ import {
   validarDatosFormulario,
   type DatosFormulario,
 } from '@/src/domain/formulario';
+import { buscarGroseria, MENSAJE_GROSERIA } from '@/src/domain/groserias';
 import { rutaIconoAlerta } from '@/src/domain/iconos-alerta';
 import { useCategorias } from '@/src/hooks/use-categorias';
 import { useCrearReporte } from '@/src/hooks/use-reportes';
-import { useReglasCategorias } from '@/src/hooks/use-admin';
+import { usePalabrasProhibidas, useReglasCategorias } from '@/src/hooks/use-admin';
 import { useSesion } from '@/src/hooks/use-sesion';
 import { useUbicacion } from '@/src/hooks/use-ubicacion';
 import { tomarOElegirFoto, type OrigenFoto } from '@/src/services/camara';
@@ -97,7 +98,23 @@ export function CrearReporteScreen() {
 
   const categoria = categoriasQuery.data?.find((c) => c.id === categoriaId) ?? null;
   const campos = useMemo(() => normalizarCampos(categoria?.campos_formulario), [categoria]);
-  const errores = useMemo(() => validarDatosFormulario(campos, datos), [campos, datos]);
+  const palabrasProhibidas = usePalabrasProhibidas().data ?? [];
+  // Groserías: se avisa al momento (el servidor también lo bloquea).
+  const groseriaEnCampos = useMemo(() => {
+    const encontradas: Record<string, string> = {};
+    for (const campo of campos) {
+      if (buscarGroseria(datos[campo.clave] ?? '', palabrasProhibidas)) encontradas[campo.clave] = MENSAJE_GROSERIA;
+    }
+    return encontradas;
+  }, [campos, datos, palabrasProhibidas]);
+  const groseriaEnDescripcion = useMemo(
+    () => Boolean(buscarGroseria(descripcion, palabrasProhibidas)),
+    [descripcion, palabrasProhibidas],
+  );
+  const errores = useMemo(
+    () => ({ ...validarDatosFormulario(campos, datos), ...groseriaEnCampos }),
+    [campos, datos, groseriaEnCampos],
+  );
   const umbral = reglasQuery.data?.get(categoriaId ?? '')?.umbral_confirmaciones;
   // "Persona desaparecida": el propio reporte basta, pero con sanción legal si es falso.
   const exigeDeclaracion = Boolean(categoria?.requiere_moderacion_obligatoria);
@@ -146,6 +163,10 @@ export function CrearReporteScreen() {
   async function enviar() {
     if (!categoria) {
       await alerta('Falta categoría', 'Elige qué tipo de incidente estás reportando.');
+      return;
+    }
+    if (groseriaEnDescripcion) {
+      await alerta('Lenguaje inapropiado', MENSAJE_GROSERIA + ' Corrige la descripción para poder enviar.');
       return;
     }
     if (Object.keys(errores).length > 0) {
@@ -271,7 +292,7 @@ export function CrearReporteScreen() {
                 campo={campo}
                 valor={datos[campo.clave] ?? ''}
                 datos={datos}
-                error={mostrarErrores ? errores[campo.clave] : undefined}
+                error={groseriaEnCampos[campo.clave] ?? (mostrarErrores ? errores[campo.clave] : undefined)}
                 onCambio={(valor) => setDatos((previos) => ({ ...previos, [campo.clave]: valor }))}
               />
             ))}
@@ -285,9 +306,11 @@ export function CrearReporteScreen() {
       <textarea
         value={descripcion}
         onChange={(e) => setDescripcion(e.target.value)}
-        className="campo campo--area"
+        className={`campo campo--area${groseriaEnDescripcion ? ' campo--error' : ''}`}
         placeholder="Describe brevemente lo que ves (opcional)"
+        aria-invalid={groseriaEnDescripcion}
       />
+      {groseriaEnDescripcion ? <p className="texto-error texto-pequeno">{MENSAJE_GROSERIA}</p> : null}
 
       {fotoPendiente && !fotoLista ? (
         <RedactorFoto

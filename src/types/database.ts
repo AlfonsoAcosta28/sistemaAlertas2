@@ -263,6 +263,12 @@ export type Database = {
         Update: Partial<ReputacionMovimientoRow>;
         Relationships: never[];
       };
+      palabras_prohibidas: {
+        Row: { palabra: string; created_at: string };
+        Insert: { palabra: string };
+        Update: { palabra?: string };
+        Relationships: never[];
+      };
       perfiles: {
         Row: PerfilRow;
         Insert: Partial<PerfilRow> & { id: string };

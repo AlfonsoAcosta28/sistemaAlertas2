@@ -13,6 +13,7 @@ import { CategoriasAdminScreen } from '@/src/pantallas/admin/categorias';
 import { DetalleReporteScreen } from '@/src/pantallas/admin/detalle-reporte';
 import { HistorialModeracionScreen } from '@/src/pantallas/admin/historial';
 import { InstitucionesAdminScreen } from '@/src/pantallas/admin/instituciones';
+import { LenguajeAdminScreen } from '@/src/pantallas/admin/lenguaje';
 import { ModeracionScreen } from '@/src/pantallas/admin/moderacion';
 import { UsuariosAdminScreen } from '@/src/pantallas/admin/usuarios';
 import { LoginScreen } from '@/src/pantallas/auth/login';
@@ -109,6 +110,14 @@ export function NavegacionRaiz() {
           element={
             <SoloAdministrador>
               <InstitucionesAdminScreen />
+            </SoloAdministrador>
+          }
+        />
+        <Route
+          path="lenguaje"
+          element={
+            <SoloAdministrador>
+              <LenguajeAdminScreen />
             </SoloAdministrador>
           }
         />

@@ -183,3 +183,24 @@ export async function obtenerDetalleReporte(reporteId: string): Promise<DetalleR
     auditoria: auditoria.data ?? [],
   };
 }
+
+// ---------- Filtro de groserías ----------
+
+/** Lista (ya normalizada) de palabras y frases prohibidas. */
+export async function listarPalabrasProhibidas(): Promise<string[]> {
+  const { data, error } = await requerirSupabase().from('palabras_prohibidas').select('palabra').order('palabra');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((p) => p.palabra);
+}
+
+export async function agregarPalabraProhibida(palabra: string): Promise<void> {
+  const { error } = await requerirSupabase().from('palabras_prohibidas').insert({ palabra });
+  if (error) {
+    throw new Error(error.code === '23505' ? 'Esa palabra ya está en la lista.' : error.message);
+  }
+}
+
+export async function quitarPalabraProhibida(palabra: string): Promise<void> {
+  const { error } = await requerirSupabase().from('palabras_prohibidas').delete().eq('palabra', palabra);
+  if (error) throw new Error(error.message);
+}

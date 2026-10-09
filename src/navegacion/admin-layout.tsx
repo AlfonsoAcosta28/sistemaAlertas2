@@ -10,6 +10,7 @@ const SECCIONES = [
   { ruta: '/admin/categorias', titulo: 'Categorías', soloAdmin: true },
   { ruta: '/admin/instituciones', titulo: 'Instituciones', soloAdmin: true },
   { ruta: '/admin/usuarios', titulo: 'Usuarios', soloAdmin: true },
+  { ruta: '/admin/lenguaje', titulo: 'Lenguaje', soloAdmin: true },
   { ruta: '/admin/historial', titulo: 'Historial', soloAdmin: false },
 ] as const;
 

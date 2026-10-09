@@ -3,15 +3,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   cambiarRolUsuario,
   eliminarUsuario,
+  agregarPalabraProhibida,
   guardarCategoria,
   guardarInstitucion,
   listarCategoriaInstituciones,
   listarInstituciones,
   listarMisMovimientosReputacion,
+  listarPalabrasProhibidas,
   listarReglasCategorias,
   listarTodasLasCategorias,
   listarUsuarios,
   obtenerDetalleReporte,
+  quitarPalabraProhibida,
   suspenderUsuario,
   type DatosCategoria,
   type DatosInstitucion,
@@ -90,5 +93,25 @@ export function useDetalleReporte(reporteId: string | undefined) {
     queryKey: ['moderacion', 'detalle', reporteId],
     queryFn: () => obtenerDetalleReporte(reporteId ?? ''),
     enabled: Boolean(reporteId),
+  });
+}
+
+export function usePalabrasProhibidas() {
+  return useQuery({ queryKey: ['palabras-prohibidas'], queryFn: listarPalabrasProhibidas, staleTime: 10 * 60_000 });
+}
+
+export function useAgregarPalabraProhibida() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (palabra: string) => agregarPalabraProhibida(palabra),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['palabras-prohibidas'] }),
+  });
+}
+
+export function useQuitarPalabraProhibida() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (palabra: string) => quitarPalabraProhibida(palabra),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['palabras-prohibidas'] }),
   });
 }
