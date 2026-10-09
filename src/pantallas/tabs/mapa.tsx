@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
 
+import { MapaGoogle, type PuntoMapa } from '@/src/components/mapa-google';
 import { MensajeConfiguracion } from '@/src/components/mensaje-configuracion';
-import { obtenerEstiloEstadoReporte } from '@/src/domain/mapa';
+import { obtenerEstiloEstadoReporte, tieneClaveGoogleMapsConfigurada } from '@/src/domain/mapa';
 import { useAlertasCercanas } from '@/src/hooks/use-alertas-cercanas';
 import { useCategorias } from '@/src/hooks/use-categorias';
 import { useReaccionarReporte } from '@/src/hooks/use-reportes';
@@ -14,6 +15,9 @@ import { InsigniaEstado } from '@/src/ui/insignia-estado';
 
 type ReportePublico = Database['public']['Views']['reportes_publicos']['Row'];
 
+const claveGoogleMaps = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? '';
+const usarGoogleMaps = tieneClaveGoogleMapsConfigurada(claveGoogleMaps);
+
 /** Re-centra el mapa cuando cambia la ubicación del usuario. */
 function Recentrar({ centro }: { centro: [number, number] }) {
   const mapa = useMap();
@@ -24,8 +28,8 @@ function Recentrar({ centro }: { centro: [number, number] }) {
 }
 
 /**
- * Sustituye a react-native-maps (Google Maps) por Leaflet + OpenStreetMap:
- * funciona igual en Android, iOS y web y no requiere clave de API.
+ * Mapa de alertas. Con VITE_GOOGLE_MAPS_API_KEY usa Google Maps (igual que
+ * react-native-maps en la versión Expo); sin clave, cae a Leaflet + OpenStreetMap.
  */
 export function MapaScreen() {
   const ubicacion = useUbicacion();
@@ -45,6 +49,27 @@ export function MapaScreen() {
     [ubicacion.ubicacion],
   );
 
+  const puntosGoogle = useMemo<PuntoMapa[]>(
+    () =>
+      alertasCercanas.map(({ reporte }) => {
+        const estilo = obtenerEstiloEstadoReporte(reporte.estado, reporte.severidad);
+        return {
+          id: reporte.id,
+          latitud: reporte.latitud_aproximada,
+          longitud: reporte.longitud_aproximada,
+          color: estilo.colorBorde,
+          titulo: nombrePorCategoria.get(reporte.categoria_id) ?? 'Incidente',
+          detalle: estilo.etiqueta,
+        };
+      }),
+    [alertasCercanas, nombrePorCategoria],
+  );
+
+  function seleccionarPorId(id: string) {
+    const encontrado = alertasCercanas.find(({ reporte }) => reporte.id === id);
+    if (encontrado) setSeleccionado(encontrado.reporte);
+  }
+
   async function compartir(reporte: ReportePublico) {
     const nombreCategoria = nombrePorCategoria.get(reporte.categoria_id) ?? 'Incidente';
     await compartirTexto(
@@ -54,7 +79,15 @@ export function MapaScreen() {
 
   return (
     <div className="pantalla-mapa">
-      {centro ? (
+      {centro && usarGoogleMaps && ubicacion.ubicacion ? (
+        <MapaGoogle
+          apiKey={claveGoogleMaps}
+          centro={ubicacion.ubicacion}
+          radioMetros={radioPersonalMetros}
+          puntos={puntosGoogle}
+          onSeleccionar={seleccionarPorId}
+        />
+      ) : centro ? (
         <MapContainer center={centro} zoom={13} className="mapa" attributionControl>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

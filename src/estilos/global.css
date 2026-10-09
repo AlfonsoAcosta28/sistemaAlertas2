@@ -494,3 +494,42 @@ button:disabled {
   background: var(--blanco);
   text-align: left;
 }
+
+/* ---------- Google Maps (@capacitor/google-maps) ---------- */
+.mapa-google {
+  position: relative;
+  overflow: hidden;
+}
+
+.mapa-google__elemento {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mapa-google__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px;
+  background: var(--borde);
+  color: var(--texto-2);
+}
+
+/*
+ * En Android el mapa nativo se dibuja debajo del WebView: mientras la pantalla
+ * de mapa está abierta, todo lo que hay "encima" del mapa debe ser transparente.
+ * El encabezado, la barra de pestañas y los paneles conservan su fondo blanco.
+ */
+html.con-mapa-nativo,
+html.con-mapa-nativo body,
+html.con-mapa-nativo #root,
+html.con-mapa-nativo .marco-tabs,
+html.con-mapa-nativo .marco-tabs__contenido,
+html.con-mapa-nativo .pantalla-mapa,
+html.con-mapa-nativo .mapa-google {
+  background: transparent !important;
+}

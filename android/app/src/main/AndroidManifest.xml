@@ -29,6 +29,11 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Google Maps SDK (@capacitor/google-maps); la clave viene del .env vía build.gradle -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${GOOGLE_MAPS_API_KEY}" />
+
         <!-- Ícono y color de las notificaciones push (FCM) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

@@ -11,7 +11,7 @@ de Supabase (migraciones y Edge Functions incluidas en `supabase/`). Ver
 - Capacitor 8 (Android incluido en `android/`; iOS se agrega en una Mac)
 - TanStack Query + Zustand (sesión), Supabase JS
 - `h3-js` v4 (misma versión que la Edge Function, sin parches)
-- Leaflet + OpenStreetMap para el mapa (ya no necesita clave de Google Maps)
+- Google Maps vía `@capacitor/google-maps` (SDK nativo en Android/iOS); Leaflet + OpenStreetMap como respaldo si no hay clave
 
 ## Equivalencias Expo → Capacitor
 
@@ -25,11 +25,11 @@ de Supabase (migraciones y Edge Functions incluidas en `supabase/`). Ver
 | `expo-notifications` (token Expo) | `@capacitor/push-notifications` (token FCM) + `@capacitor/local-notifications` | `src/hooks/use-registro-push.ts` |
 | `expo-image-picker` | `@capacitor/camera` (input de archivo en web) | `src/services/camara.ts` |
 | `react-native-view-shot` + `expo-image-manipulator` | `<canvas>` (cajas negras, 1280 px, JPEG 0.7, sin EXIF) | `src/components/redactor-foto.tsx` |
-| `react-native-maps` | Leaflet / `react-leaflet` | `src/pantallas/tabs/mapa.tsx` |
+| `react-native-maps` (Google) | `@capacitor/google-maps` (misma clave) | `src/components/mapa-google.tsx`, `src/pantallas/tabs/mapa.tsx` |
 | `Alert.alert` / `Share.share` | `@capacitor/dialog` / `@capacitor/share` | `src/ui/dialogos.ts` |
 
 De paso, la redacción de fotos y la ubicación en segundo plano ya no dependen de un
-development build, y el mapa funciona igual en Android, iOS y navegador.
+development build.
 
 ## Requisitos
 
@@ -45,6 +45,8 @@ Ya viene un `.env` con tus valores de Supabase (copiados del proyecto Expo). Pla
 
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `VITE_PUSH_HABILITADO` — déjalo en `false` hasta configurar Firebase (ver abajo).
+- `VITE_GOOGLE_MAPS_API_KEY` — la misma clave de la versión Expo. `android/app/build.gradle`
+  la lee del `.env` y la pone en el `AndroidManifest.xml` al compilar.
 
 Las variables se incrustan al compilar: después de cambiarlas vuelve a correr `npm run build`.
 
@@ -72,6 +74,20 @@ Luego agrega en `ios/App/App/Info.plist`: `NSLocationWhenInUseUsageDescription`,
 `NSPhotoLibraryUsageDescription` (puedes reutilizar los textos de `app.config.ts` de la versión
 Expo), y en *Signing & Capabilities* activa **Background Modes → Location updates** y **Push
 Notifications**.
+
+## Google Maps
+
+- **Android/iOS:** usa el SDK nativo de Google Maps. En Google Cloud Console la clave necesita
+  *Maps SDK for Android* habilitado (y *Maps SDK for iOS* si compilas para iPhone). Si la
+  restringiste por app Android, agrega el SHA-1 del keystore con el que compilas (el de debug
+  también, para probar).
+- **Navegador (`npm run dev`):** usa *Maps JavaScript API*; habilítala y permite
+  `http://localhost:5173/*` si la clave tiene restricción de referente.
+- En Android el mapa nativo se dibuja debajo del WebView; por eso la pantalla de mapa vuelve
+  transparente el fondo de la página mientras está abierta (clase `con-mapa-nativo` en
+  `global.css`). Si ves un hueco en lugar del mapa, revisa que ningún contenedor nuevo tenga
+  fondo.
+- Sin `VITE_GOOGLE_MAPS_API_KEY`, la app usa Leaflet + OpenStreetMap automáticamente.
 
 ## Notificaciones push (Firebase Cloud Messaging)
 
@@ -149,5 +165,3 @@ rostros/placas, sin OTP por SMS, horario de silencio en UTC, sin *critical alert
   reanuda al volver a abrirla.
 - En iOS, `@capacitor/push-notifications` entrega un token de APNs, no de FCM. Para push en iOS
   con este backend hay que usar `@capacitor-firebase/messaging` o enviar por APNs.
-- Las teselas del mapa vienen de los servidores públicos de OpenStreetMap; para producción con
-  mucho tráfico conviene un proveedor propio (MapTiler, Stadia, etc.).

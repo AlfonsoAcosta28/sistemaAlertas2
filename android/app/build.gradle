@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Lee VITE_GOOGLE_MAPS_API_KEY del .env del proyecto para no escribir la clave en el manifest.
+def leerVariableEnv(String nombre) {
+    def archivoEnv = rootProject.file('../.env')
+    if (!archivoEnv.exists()) return ''
+    def linea = archivoEnv.readLines().find { it.trim().startsWith(nombre + '=') }
+    return linea ? linea.substring(linea.indexOf('=') + 1).trim() : ''
+}
+
 android {
     namespace = "com.alfonso207.sistemaalertas"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -10,6 +18,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [GOOGLE_MAPS_API_KEY: leerVariableEnv('VITE_GOOGLE_MAPS_API_KEY')]
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
